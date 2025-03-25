@@ -2,7 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const dns = require('dns');
+const url = require('url');
 
+app.use(express.json());
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
@@ -19,22 +22,43 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-app.get("/api/whoami", (req, res) => {
-  
-  // Get the user's IP address (from the 'x-forwarded-for' header or the default 'req.ip' if behind a proxy)
-  let ipaddress = req.headers['x-forwarded-for'] || req.ip;
-  // Get the user's preferred language (Accept-Language header)
-  let language = req.headers['accept-language'].split(',')[0]; // Just the first language in the list
-  // Get the user's software (User-Agent header)
-  let software = req.headers['user-agent'];
+const urlDatabase = {}; // Stores short URLs
+let urlId = 1; // Counter for generating unique short URLs
 
-  // Respond with JSON object including ipaddress, language, and software
-  res.json({
-    ipaddress: ipaddress,
-    language: language,
-    software: software
+app.post("/api/shorturl", (req, res) => {
+  // Logic for storing and validating URLs
+    let { url: originalUrl } = req.body;
+
+  // Check if the URL has a valid protocol
+  const validProtocol = /^https?:\/\//i;
+  if (!validProtocol.test(originalUrl)) {
+    return res.json({ error: "invalid url" });
+  }
+
+  // Extract hostname (without protocol) for DNS lookup
+  const hostname = url.parse(originalUrl).hostname;
+  
+  dns.lookup(hostname, (err) => {
+    if (err) {
+      return res.json({ error: "invalid url" });
+    }
+
+    // Store the URL and generate a short ID
+    let shortUrl = urlId++;
+    urlDatabase[shortUrl] = originalUrl;
+
+    // Respond with the shortened URL data
+    res.json({
+      original_url: originalUrl,
+      short_url: shortUrl
+    });
   });
 });
+
+app.get("/api/shorturl/:shorturl", (req, res) => {
+  // Logic for redirecting to the original URL
+});
+
 
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
