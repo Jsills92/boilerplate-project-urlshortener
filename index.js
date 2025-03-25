@@ -6,6 +6,8 @@ const dns = require('dns');
 const url = require('url');
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
@@ -57,7 +59,7 @@ app.post("/api/shorturl", (req, res) => {
 
 app.get("/api/shorturl/:shorturl", (req, res) => {
   // Logic for redirecting to the original URL
-  const shortUrl = req.params.shorturl;
+  const shortUrl = Number(req.params.shorturl);
 
   // Check if the shortUrl exists in the database
   const originalUrl = urlDatabase[shortUrl];
