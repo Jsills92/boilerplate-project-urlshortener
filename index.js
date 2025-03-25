@@ -57,6 +57,16 @@ app.post("/api/shorturl", (req, res) => {
 
 app.get("/api/shorturl/:shorturl", (req, res) => {
   // Logic for redirecting to the original URL
+  const shortUrl = req.params.shorturl;
+
+  // Check if the shortUrl exists in the database
+  const originalUrl = urlDatabase[shortUrl];
+
+  if (originalUrl) {
+    return res.redirect(originalUrl); // Redirect to the original URL
+  } else {
+    return res.json({ error: "No short URL found" });
+  }
 });
 
 
